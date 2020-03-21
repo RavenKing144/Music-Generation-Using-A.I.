@@ -21,7 +21,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 '''
 #Code for formation of notes file which has all the notes and chords of dataset stored
 notes = []
-for file in glob.glob("/content/drive/My Drive/albeniz/*.mid"):
+for file in glob.glob("./dataset_albeniz/*.mid"):
   midi = converter.parse(file)
   element_to_parse = midi.flat.notes
   print("parsing %s"%file)
