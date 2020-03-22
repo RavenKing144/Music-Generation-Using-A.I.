@@ -80,8 +80,8 @@ model.add(Dense(units=n_vocab, activation="softmax"))
 model.compile(loss = "categorical_crossentropy", optimizer = "adam")
 model.summary()
 
-check = ModelCheckpoint("model.hdf5", monitor = "loss", verbose = 0, save_best_only= True, mode = "min")
-hist = model.fit(network_input, network_output, epochs = 100, batch_size = 64, callbacks=[check])
+'''check = ModelCheckpoint("model.hdf5", monitor = "loss", verbose = 0, save_best_only= True, mode = "min")
+hist = model.fit(network_input, network_output, epochs = 100, batch_size = 64, callbacks=[check])'''
 
 model = load_model("model.hdf5")
 
@@ -94,3 +94,45 @@ for i in range(len(notes) - sequence_length):
   predicted_network_input.append([ele_to_int[ch] for ch in seq_in])
 
 start = np.random.randint(len(predicted_network_input)-1)
+
+#integer to element mapping
+int_to_ele = dict((num,ele) for num, ele in emumerate(pitch_names))
+
+pattern = network_input[start]
+prediction_output = []
+# generation of 200 elements
+for ni in range(200):
+  prediction_input = np.reshape(pattern, (1, len(pattern), 1))/n_vocab
+  prediction = model.fit(prediction_input, verbose=0)
+  prediction_output.append(int_to_ele[np.argmax(prediction)])
+  pattern.append(prediction_output[-1])
+  pattern = pattern[1:]
+
+"""###Creation of midi file"""
+
+offset = 0 #TIme
+ output_notes = []
+ for pattern in prediction_output:
+   #if pattern is chord
+   if '+' in pattern or pattern.isdigit():
+     notes_in_chord = pattern.split('+')
+     temp_notes = []
+     for curr_note in notes_in_chord:
+       new_note = note.Note(int(curr_note))
+       new_note.storedInstrument = instrument.Piano()
+       temp_notes.append(new_note)
+      new_chord = chord.Chord(temp_notes)
+      new_chord.offset = offset
+      output_notes.append(new_chord)
+
+   #if pattern is note
+   else:
+     new_note = note.Note(int(pattern))
+     new_note.storedInstrument = instrument.Piano()
+     new_note.offset = offset
+     output_notes.append(new_note)
+  offset += 0.5
+
+#creation of stream object
+midi_stream = stream.Stream(output_notes)
+midi_stream.show('midi')
